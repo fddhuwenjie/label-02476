@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuxuanlei.mapper.StudentMapper">
+
+    <insert id="insert" parameterType="Student" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student (name, student_no, age, major, create_time, update_time, deleted)
+        VALUES (#{name}, #{studentNo}, #{age}, #{major}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="updateById" parameterType="Student">
+        UPDATE student
+        SET name = #{name},
+            age = #{age},
+            major = #{major},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE student
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="Student">
+        SELECT * FROM student
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByStudentNo" resultType="Student">
+        SELECT * FROM student
+        WHERE student_no = #{studentNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultType="Student">
+        SELECT * FROM student
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM student
+        WHERE deleted = 0
+    </select>
+
+    <resultMap id="StudentWithDetailsMap" type="Student">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="student_no" property="studentNo"/>
+        <result column="age" property="age"/>
+        <result column="major" property="major"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        
+        <!-- 一对一：借书证 -->
+        <association property="libraryCard" javaType="LibraryCard">
+            <id column="card_id" property="id"/>
+            <result column="card_no" property="cardNo"/>
+            <result column="issue_date" property="issueDate"/>
+            <result column="expire_date" property="expireDate"/>
+            <result column="card_status" property="status"/>
+        </association>
+        
+        <!-- 一对多：借阅记录（学生-借阅记录 1:N） -->
+        <collection property="bookBorrows" ofType="BookBorrow">
+            <id column="borrow_id" property="id"/>
+            <result column="borrow_date" property="borrowDate"/>
+            <result column="return_date" property="returnDate"/>
+            <result column="borrow_status" property="status"/>
+            <association property="book" javaType="Book">
+                <id column="book_id" property="id"/>
+                <result column="book_name" property="bookName"/>
+                <result column="author" property="author"/>
+                <result column="isbn" property="isbn"/>
+            </association>
+        </collection>
+        
+        <!-- 一对多：所借图书（通过 book_borrow 中间表实现，详见 project_design.md 2.1） -->
+        <collection property="borrowedBooks" ofType="Book"
+                    select="com.yuxuanlei.mapper.BookMapper.selectBooksBorrowedByStudentId" column="id"/>
+        
+        <!-- 多对多：选课记录（StudentCourse 中间表，score 属中间表字段） -->
+        <collection property="courseEnrollments" ofType="StudentCourse">
+            <id column="sc_id" property="id"/>
+            <result column="enroll_date" property="enrollDate"/>
+            <result column="score" property="score"/>
+            <association property="course" javaType="Course">
+                <id column="course_id" property="id"/>
+                <result column="course_name" property="courseName"/>
+                <result column="course_code" property="courseCode"/>
+                <result column="credits" property="credits"/>
+                <result column="teacher" property="teacher"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <!--
+        综合级联查询：一次查出学生的 1:1 借书证、1:N 借阅记录（含图书）、M:N 选课记录（含课程及成绩）
+        使用 LEFT JOIN 保证无借阅/选课时仍能返回学生，多表 JOIN 会产生行膨胀，由 ResultMap 做集合聚合
+    -->
+    <select id="selectStudentWithDetails" resultMap="StudentWithDetailsMap">
+        SELECT 
+            s.id, s.name, s.student_no, s.age, s.major, s.create_time, s.update_time,
+            lc.id as card_id, lc.card_no, lc.issue_date, lc.expire_date, lc.status as card_status,
+            bb.id as borrow_id, bb.borrow_date, bb.return_date, bb.status as borrow_status,
+            b.id as book_id, b.book_name, b.author, b.isbn,
+            sc.id as sc_id, sc.enroll_date, sc.score,
+            c.id as course_id, c.course_name, c.course_code, c.credits, c.teacher
+        FROM student s
+        LEFT JOIN library_card lc ON s.id = lc.student_id AND lc.deleted = 0
+        LEFT JOIN book_borrow bb ON s.id = bb.student_id AND bb.deleted = 0
+        LEFT JOIN book b ON bb.book_id = b.id AND b.deleted = 0
+        LEFT JOIN student_course sc ON s.id = sc.student_id AND sc.deleted = 0
+        LEFT JOIN course c ON sc.course_id = c.id AND c.deleted = 0
+        WHERE s.id = #{id} AND s.deleted = 0
+    </select>
+
+    <select id="searchStudents" resultType="Student">
+        SELECT * FROM student
+        WHERE deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="studentNo != null and studentNo != ''">
+            AND student_no LIKE CONCAT('%', #{studentNo}, '%')
+        </if>
+        <if test="major != null and major != ''">
+            AND major LIKE CONCAT('%', #{major}, '%')
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectByCourseId" resultType="Student">
+        SELECT s.id, s.name, s.student_no, s.age, s.major, s.create_time, s.update_time, s.deleted
+        FROM student s
+        INNER JOIN student_course sc ON s.id = sc.student_id AND sc.deleted = 0
+        WHERE sc.course_id = #{courseId} AND s.deleted = 0
+        ORDER BY sc.enroll_date DESC
+    </select>
+
+    <select id="searchCount" resultType="long">
+        SELECT COUNT(*) FROM student
+        WHERE deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="studentNo != null and studentNo != ''">
+            AND student_no LIKE CONCAT('%', #{studentNo}, '%')
+        </if>
+        <if test="major != null and major != ''">
+            AND major LIKE CONCAT('%', #{major}, '%')
+        </if>
+    </select>
+
+</mapper>

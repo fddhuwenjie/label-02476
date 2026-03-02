@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuxuanlei.mapper.BookMapper">
+
+    <insert id="insert" parameterType="Book" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO book (book_name, author, isbn, total_count, available_count, create_time, update_time, deleted)
+        VALUES (#{bookName}, #{author}, #{isbn}, #{totalCount}, #{availableCount}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="updateById" parameterType="Book">
+        UPDATE book
+        SET book_name = #{bookName},
+            author = #{author},
+            total_count = #{totalCount},
+            available_count = #{availableCount},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE book
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="Book">
+        SELECT * FROM book
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultType="Book">
+        SELECT * FROM book
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM book
+        WHERE deleted = 0
+    </select>
+
+    <select id="searchBooks" resultType="Book">
+        SELECT * FROM book
+        WHERE deleted = 0
+        <if test="bookName != null and bookName != ''">
+            AND book_name LIKE CONCAT('%', #{bookName}, '%')
+        </if>
+        <if test="author != null and author != ''">
+            AND author LIKE CONCAT('%', #{author}, '%')
+        </if>
+        <if test="isbn != null and isbn != ''">
+            AND isbn LIKE CONCAT('%', #{isbn}, '%')
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="searchCount" resultType="long">
+        SELECT COUNT(*) FROM book
+        WHERE deleted = 0
+        <if test="bookName != null and bookName != ''">
+            AND book_name LIKE CONCAT('%', #{bookName}, '%')
+        </if>
+        <if test="author != null and author != ''">
+            AND author LIKE CONCAT('%', #{author}, '%')
+        </if>
+        <if test="isbn != null and isbn != ''">
+            AND isbn LIKE CONCAT('%', #{isbn}, '%')
+        </if>
+    </select>
+
+    <!-- 学生所借图书（通过 book_borrow 中间表实现 1:N，见 project_design.md 2.1） -->
+    <select id="selectBooksBorrowedByStudentId" resultType="Book">
+        SELECT DISTINCT b.id, b.book_name, b.author, b.isbn, b.total_count, b.available_count, b.create_time, b.update_time, b.deleted
+        FROM book b
+        INNER JOIN book_borrow bb ON b.id = bb.book_id AND bb.deleted = 0
+        WHERE bb.student_id = #{studentId} AND b.deleted = 0
+        ORDER BY bb.borrow_date DESC
+    </select>
+
+    <select id="selectByIsbn" resultType="Book">
+        SELECT * FROM book
+        WHERE isbn = #{isbn} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="searchBooksCount" resultType="long">
+        SELECT COUNT(*) FROM book
+        WHERE deleted = 0
+        <if test="bookName != null and bookName != ''">
+            AND book_name LIKE CONCAT('%', #{bookName}, '%')
+        </if>
+        <if test="author != null and author != ''">
+            AND author LIKE CONCAT('%', #{author}, '%')
+        </if>
+        <if test="isbn != null and isbn != ''">
+            AND isbn LIKE CONCAT('%', #{isbn}, '%')
+        </if>
+    </select>
+
+</mapper>

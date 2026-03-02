@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuxuanlei.mapper.BookBorrowMapper">
+
+    <insert id="insert" parameterType="BookBorrow" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO book_borrow (student_id, book_id, borrow_date, return_date, status, create_time, update_time, deleted)
+        VALUES (#{studentId}, #{bookId}, #{borrowDate}, #{returnDate}, #{status}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="updateById" parameterType="BookBorrow">
+        UPDATE book_borrow
+        SET return_date = #{returnDate},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <select id="selectById" resultType="BookBorrow">
+        SELECT * FROM book_borrow
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultType="BookBorrow">
+        SELECT * FROM book_borrow
+        WHERE deleted = 0
+        ORDER BY borrow_date DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM book_borrow
+        WHERE deleted = 0
+    </select>
+
+    <resultMap id="BorrowWithBookMap" type="BookBorrow">
+        <id column="id" property="id"/>
+        <result column="student_id" property="studentId"/>
+        <result column="book_id" property="bookId"/>
+        <result column="borrow_date" property="borrowDate"/>
+        <result column="return_date" property="returnDate"/>
+        <result column="status" property="status"/>
+        <association property="book" javaType="Book">
+            <id column="book_id" property="id"/>
+            <result column="book_name" property="bookName"/>
+            <result column="author" property="author"/>
+            <result column="isbn" property="isbn"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="BorrowWithDetailsMap" type="BookBorrow" extends="BorrowWithBookMap">
+        <association property="student" javaType="Student">
+            <id column="student_id" property="id"/>
+            <result column="student_name" property="name"/>
+            <result column="student_no" property="studentNo"/>
+        </association>
+    </resultMap>
+
+    <!-- 学生借阅记录列表，含关联图书信息 -->
+    <select id="selectBorrowsByStudentId" resultMap="BorrowWithBookMap">
+        SELECT 
+            bb.id, bb.student_id, bb.book_id, bb.borrow_date, bb.return_date, bb.status,
+            b.book_name, b.author, b.isbn
+        FROM book_borrow bb
+        LEFT JOIN book b ON bb.book_id = b.id AND b.deleted = 0
+        WHERE bb.student_id = #{studentId} AND bb.deleted = 0
+        ORDER BY bb.borrow_date DESC
+    </select>
+
+    <!-- 借阅记录详情：含学生、图书双向关联 -->
+    <select id="selectBorrowWithDetails" resultMap="BorrowWithDetailsMap">
+        SELECT 
+            bb.id, bb.student_id, bb.book_id, bb.borrow_date, bb.return_date, bb.status,
+            s.name as student_name, s.student_no,
+            b.book_name, b.author, b.isbn
+        FROM book_borrow bb
+        LEFT JOIN student s ON bb.student_id = s.id AND s.deleted = 0
+        LEFT JOIN book b ON bb.book_id = b.id AND b.deleted = 0
+        WHERE bb.id = #{id} AND bb.deleted = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuxuanlei.mapper.LibraryCardMapper">
+
+    <insert id="insert" parameterType="LibraryCard" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO library_card (student_id, card_no, issue_date, expire_date, status, create_time, update_time, deleted)
+        VALUES (#{studentId}, #{cardNo}, #{issueDate}, #{expireDate}, #{status}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="updateById" parameterType="LibraryCard">
+        UPDATE library_card
+        SET card_no = #{cardNo},
+            issue_date = #{issueDate},
+            expire_date = #{expireDate},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <select id="selectById" resultType="LibraryCard">
+        SELECT * FROM library_card
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByStudentId" resultType="LibraryCard">
+        SELECT * FROM library_card
+        WHERE student_id = #{studentId} AND deleted = 0
+    </select>
+
+    <!-- 双向 1:1：借书证关联学生 -->
+    <resultMap id="CardWithStudentMap" type="LibraryCard">
+        <id column="id" property="id"/>
+        <result column="student_id" property="studentId"/>
+        <result column="card_no" property="cardNo"/>
+        <result column="issue_date" property="issueDate"/>
+        <result column="expire_date" property="expireDate"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <association property="student" javaType="Student">
+            <id column="s_id" property="id"/>
+            <result column="s_name" property="name"/>
+            <result column="s_student_no" property="studentNo"/>
+            <result column="s_age" property="age"/>
+            <result column="s_major" property="major"/>
+        </association>
+    </resultMap>
+
+    <!-- 借书证详情：1:1 关联学生信息 -->
+    <select id="selectByIdWithStudent" resultMap="CardWithStudentMap">
+        SELECT 
+            lc.id, lc.student_id, lc.card_no, lc.issue_date, lc.expire_date, lc.status, lc.create_time, lc.update_time,
+            s.id as s_id, s.name as s_name, s.student_no as s_student_no, s.age as s_age, s.major as s_major
+        FROM library_card lc
+        LEFT JOIN student s ON lc.student_id = s.id AND s.deleted = 0
+        WHERE lc.id = #{id} AND lc.deleted = 0
+    </select>
+
+    <!-- 根据学生ID查借书证：含关联学生 -->
+    <select id="selectByStudentIdWithStudent" resultMap="CardWithStudentMap">
+        SELECT 
+            lc.id, lc.student_id, lc.card_no, lc.issue_date, lc.expire_date, lc.status, lc.create_time, lc.update_time,
+            s.id as s_id, s.name as s_name, s.student_no as s_student_no, s.age as s_age, s.major as s_major
+        FROM library_card lc
+        LEFT JOIN student s ON lc.student_id = s.id AND s.deleted = 0
+        WHERE lc.student_id = #{studentId} AND lc.deleted = 0
+    </select>
+
+    <select id="selectList" resultType="LibraryCard">
+        SELECT * FROM library_card
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM library_card
+        WHERE deleted = 0
+    </select>
+
+</mapper>
