@@ -78,4 +78,11 @@
         WHERE bb.id = #{id} AND bb.deleted = 0
     </select>
 
+    <!-- 查询学生对某本书的未归还借阅记录（BORROWED 状态） -->
+    <select id="selectActiveBorrow" resultType="BookBorrow">
+        SELECT * FROM book_borrow
+        WHERE student_id = #{studentId} AND book_id = #{bookId} AND status = 'BORROWED' AND deleted = 0
+        LIMIT 1
+    </select>
+
 </mapper>

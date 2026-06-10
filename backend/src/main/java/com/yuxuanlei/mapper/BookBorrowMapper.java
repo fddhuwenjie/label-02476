@@ -33,6 +33,11 @@ public interface BookBorrowMapper {
      * 查询借阅记录详情（含学生和图书信息）
      */
     BookBorrow selectBorrowWithDetails(@Param("id") Long id);
+
+    /**
+     * 查询学生对某本书的未归还借阅记录
+     */
+    BookBorrow selectActiveBorrow(@Param("studentId") Long studentId, @Param("bookId") Long bookId);
     
     /**
      * 分页查询借阅记录列表
