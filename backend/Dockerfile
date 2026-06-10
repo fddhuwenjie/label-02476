@@ -16,8 +16,8 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# 复制 Fat JAR（包含所有依赖）
-COPY --from=builder /app/target/library-management-fat.jar app.jar
+# 复制 Spring Boot 可执行 JAR
+COPY --from=builder /app/target/library-management.jar app.jar
 
 # 暴露端口
 EXPOSE 8080
