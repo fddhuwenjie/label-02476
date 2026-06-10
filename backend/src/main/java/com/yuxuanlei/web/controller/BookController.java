@@ -31,13 +31,14 @@ public class BookController {
      */
     @GetMapping
     public Result<PageResult<Book>> list(
-            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") int pageNum,
-            @RequestParam(defaultValue = "10")
+            @RequestParam(value = "pageNum", defaultValue = "1")
+            @Min(value = 1, message = "页码必须大于0") int pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "10")
             @Min(value = 1, message = "每页大小必须在1-100之间")
             @Max(value = 100, message = "每页大小必须在1-100之间") int pageSize,
-            @RequestParam(required = false) String bookName,
-            @RequestParam(required = false) String author,
-            @RequestParam(required = false) String isbn) {
+            @RequestParam(value = "bookName", required = false) String bookName,
+            @RequestParam(value = "author", required = false) String author,
+            @RequestParam(value = "isbn", required = false) String isbn) {
         return Result.success(bookService.listBooks(pageNum, pageSize, bookName, author, isbn));
     }
 
@@ -45,7 +46,7 @@ public class BookController {
      * 查询单本图书
      */
     @GetMapping("/{id}")
-    public Result<Book> get(@PathVariable @Positive(message = "图书ID必须是正整数") Long id) {
+    public Result<Book> get(@PathVariable("id") @Positive(message = "图书ID必须是正整数") Long id) {
         return Result.success(bookService.getBook(id));
     }
 
@@ -61,7 +62,7 @@ public class BookController {
      * 更新图书
      */
     @PutMapping("/{id}")
-    public Result<Book> update(@PathVariable @Positive(message = "图书ID必须是正整数") Long id,
+    public Result<Book> update(@PathVariable("id") @Positive(message = "图书ID必须是正整数") Long id,
                                @Valid @RequestBody BookRequest request) {
         return Result.success(bookService.updateBook(id, request));
     }
@@ -70,7 +71,7 @@ public class BookController {
      * 删除图书（逻辑删除）
      */
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable @Positive(message = "图书ID必须是正整数") Long id) {
+    public Result<Void> delete(@PathVariable("id") @Positive(message = "图书ID必须是正整数") Long id) {
         bookService.deleteBook(id);
         return Result.success();
     }

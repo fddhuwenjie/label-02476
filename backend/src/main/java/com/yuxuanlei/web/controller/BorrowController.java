@@ -37,7 +37,8 @@ public class BorrowController {
      */
     @GetMapping("/api/borrow")
     public Result<BookBorrow> returnBook(
-            @RequestParam @Positive(message = "借阅记录ID必须是正整数") Long borrowId) {
+            @RequestParam(value = "borrowId")
+            @Positive(message = "借阅记录ID必须是正整数") Long borrowId) {
         return Result.success(borrowService.returnBook(borrowId));
     }
 
@@ -46,7 +47,7 @@ public class BorrowController {
      */
     @GetMapping("/api/students/{id}/borrows")
     public Result<List<BookBorrow>> listByStudent(
-            @PathVariable @Positive(message = "学生ID必须是正整数") Long id) {
+            @PathVariable("id") @Positive(message = "学生ID必须是正整数") Long id) {
         return Result.success(borrowService.getBorrowsByStudent(id));
     }
 }
