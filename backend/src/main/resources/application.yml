@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: library-management
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:library_db}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root123456}
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.yuxuanlei.entity
+
+server:
+  port: 8080
