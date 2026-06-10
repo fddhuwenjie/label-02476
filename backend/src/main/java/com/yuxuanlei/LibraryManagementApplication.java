@@ -1,30 +1,21 @@
 package com.yuxuanlei;
 
-import com.yuxuanlei.cli.MainMenu;
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * 图书管理系统启动类
- * @author 俞轩磊
- */
+@SpringBootApplication
+@MapperScan("com.yuxuanlei.mapper")
 public class LibraryManagementApplication {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(LibraryManagementApplication.class);
 
     public static void main(String[] args) {
         logger.info("========================================");
-        logger.info("    图书管理系统 v1.0 启动中...");
+        logger.info("    图书管理系统 v1.0 (Spring Boot) 启动中...");
         logger.info("========================================");
-        
-        try {
-            // 启动命令行菜单
-            MainMenu mainMenu = new MainMenu();
-            mainMenu.show();
-        } catch (Exception e) {
-            logger.error("系统启动失败", e);
-            System.exit(1);
-        }
+        SpringApplication.run(LibraryManagementApplication.class, args);
     }
 }
-
